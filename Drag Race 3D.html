@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Drag Race 3D</title><link rel="icon" href="data:,">
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#111;font-family:system-ui,sans-serif;color:#fff;-webkit-user-select:none;user-select:none}
+canvas{display:block;touch-action:none}
+button,select{font:inherit;color:#fff;background:#2a2f3a;border:1px solid #556;border-radius:10px;padding:10px 14px}
+.ctl{position:fixed;touch-action:none;background:#0008;border:2px solid #fff6;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;width:78px;height:78px;z-index:5}
+.ctl.edit{outline:3px dashed #fc0}
+#menu,#set{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:10px;padding:20px;z-index:10;background:linear-gradient(transparent 55%,#000c)}
+#set{justify-content:center;background:#000d}
+#set>div{display:grid;gap:10px;min-width:260px}
+.hide{display:none!important}
+#hud{position:fixed;top:10px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;text-shadow:0 2px 4px #000}
+#spd{font-size:44px;font-weight:800}#bar{width:200px;height:8px;background:#0008;margin:auto}#bar i{display:block;height:100%;background:#fc0}
+.top{position:fixed;top:10px;z-index:6}
+#site{position:fixed;inset:0;overflow:auto;z-index:20;background:#0d1016;-webkit-user-select:text;user-select:text;scroll-behavior:smooth}
+body:not(.ingame) canvas,body:not(.ingame) #menu{display:none}
+#site header{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:12px 5vw;background:#0d1016ee;z-index:2}
+#site nav a{color:#ccd;margin-left:18px;text-decoration:none}
+.hero{min-height:80vh;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:0 5vw;background:radial-gradient(circle at 70% 30%,#3a2a12,#0d1016 60%)}
+.hero h1{font-size:clamp(40px,9vw,96px);margin:0;line-height:1}.hero p{max-width:560px;opacity:.8;font-size:18px}
+.cta{background:#fc0;color:#111;font-weight:800;border:0;padding:16px 28px;font-size:18px;width:max-content}
+.sec{padding:60px 5vw}.sec h2{margin:0 0 20px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}
+.card{background:#171b24;border:1px solid #2c3342;border-radius:14px;padding:18px}.card i{display:block;height:6px;border-radius:3px;margin-bottom:12px}.card p{opacity:.75;margin:6px 0 0}
+footer{padding:30px 5vw;opacity:.6;text-align:center}
+</style></head><body>
+<div id="site"><header><b>🏁 TURBO STRIP</b><nav><a href="#garasi" onclick="go('garasi');return false">Garasi</a><a href="#peta" onclick="go('peta');return false">Peta</a><a href="#kontrol" onclick="go('kontrol');return false">Kontrol</a></nav></header>
+<section class="hero"><h1>Drag race<br>open map 3D.</h1><p>Pilih mobil di showroom, lalu tancap gas di drag strip, sirkuit Nürburgring, atau tengah kota. Semua dalam satu dunia terbuka, langsung dari browser.</p><button class="cta" data-play>MAINKAN SEKARANG</button></section>
+<section class="sec" id="garasi"><h2>Garasi</h2><div class="grid"><div class="card"><i style="background:#2f4a7a"></i><b>BMW E46</b><p>Coupe sport 6-silinder. Power 15.</p></div><div class="card"><i style="background:#dbe4f2"></i><b>Porsche 911 Targa</b><p>Targa 964, mesin belakang. Power 14.</p></div><div class="card"><i style="background:#3a3a3c"></i><b>Mercedes 190E Evo</b><p>Sedan boxy dengan sayap besar. Power 13.</p></div></div></section>
+<section class="sec" id="peta"><h2>Peta</h2><div class="grid"><div class="card"><b>Drag Strip</b><p>Lintasan lurus 402 m dengan garis start dan finish.</p></div><div class="card"><b>Nürburgring</b><p>Sirkuit loop dengan kerb merah.</p></div><div class="card"><b>Tengah Kota</b><p>Grid jalan dan gedung. Semua area tersambung jalan.</p></div></div></section>
+<section class="sec" id="kontrol"><h2>Kontrol</h2><div class="grid"><div class="card"><b>Mobile</b><p>Setir, gyro, atau panah. Transmisi auto atau manual. Posisi semua tombol bisa digeser di Pengaturan.</p></div><div class="card"><b>Desktop</b><p>WASD atau tombol panah. Kamera bebas: drag untuk memutar, scroll untuk zoom.</p></div></div></section>
+<footer>Turbo Strip • game 3D berbasis browser</footer></div>
+<div id="menu"><h1 id="cname" style="margin:0"></h1><div id="cstat" style="opacity:.8"></div>
+<div><button id="prev">◀ Mobil</button> <button id="start">MAIN</button> <button id="next">Mobil ▶</button></div></div>
+<div id="hud" class="hide"><div id="spd">0</div><div id="bar"><i></i></div><div id="gear">N</div></div>
+<button class="top hide" id="bCam" style="left:10px">📷 Kabin</button>
+<button class="top hide" id="bHome" style="left:130px">🏠 Beranda</button>
+<button class="top hide" id="bSet" style="right:10px">⚙ Pengaturan</button>
+<div class="ctl hide" id="wheel" data-id="wheel" style="left:20px;bottom:30px;width:130px;height:130px;font-size:40px">🛞</div>
+<div class="ctl hide" id="bL" data-id="bL" style="left:20px;bottom:40px">◀</div>
+<div class="ctl hide" id="bR" data-id="bR" style="left:110px;bottom:40px">▶</div>
+<div class="ctl hide" id="gas" data-id="gas" style="right:20px;bottom:40px;background:#2a8a3c88">GAS</div>
+<div class="ctl hide" id="brk" data-id="brk" style="right:110px;bottom:40px;background:#a2282888">REM</div>
+<div class="ctl hide" id="sUp" data-id="sUp" style="right:20px;bottom:130px">G+</div>
+<div class="ctl hide" id="sDn" data-id="sDn" style="right:110px;bottom:130px">G−</div>
+<div id="set" class="hide"><div>
+<b>Pengaturan</b>
+<label>Perangkat <select id="plat"><option value="m">Mobile</option><option value="d">Desktop</option></select></label>
+<label>Kontrol mobile <select id="cm"><option value="steer">Setir</option><option value="gyro">Gyro</option><option value="arrow">Panah</option></select></label>
+<label>Transmisi <select id="tr"><option value="a">Auto</option><option value="m">Manual</option></select></label>
+<label>Sensitivitas <input id="sens" type="range" min="0.5" max="2" step="0.1" value="1"></label>
+<button id="edit">Atur posisi tombol (geser tombol)</button><button id="reset">Reset posisi</button>
+<b>Pindah lokasi</b><button data-tp="0">Drag Strip</button><button data-tp="1">Nürburgring</button><button data-tp="2">Tengah Kota</button>
+<button id="close">Tutup</button></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ================= 1. CONFIG & DATA MOBIL =================
+const $=id=>document.getElementById(id),V=(x,y,z)=>new THREE.Vector3(x,y,z);
+const CARS=[
+ {n:'BMW E46',info:'Coupe sport 6-silinder',color:0x2f4a7a,w:1.7,pw:15,rim:0xc8ccd2,spk:6,rimDark:0x22262c,
+  low:[[-2.25,.32],[2.2,.32],[2.25,.7],[1.5,.88],[.85,.95],[-1.9,.98],[-2.25,.85]],cab:[[.85,.95],[.35,1.4],[-1,1.4],[-1.75,.97]],roof:1},
+ {n:'Porsche 911 Targa',info:'Targa 964, mesin belakang',color:0xdbe4f2,w:1.72,pw:14,rim:0x8a8c90,spk:5,rimDark:0x222,
+  low:[[-2.2,.32],[2.1,.32],[2.18,.68],[1.5,.9],[.65,.98],[-1.6,.98],[-2.2,.8]],cab:[[.62,.97],[.05,1.3],[-.15,.97]],
+  extra:[[[-.7,.97],[-1,1.3],[-1.35,1.28],[-1.75,.95]],0x33363c]},
+ {n:'Mercedes 190E Evo',info:'Sedan boxy + sayap besar',color:0x3a3a3c,w:1.72,pw:13,rim:0xe6e6e6,spk:0,rimDark:0x222,
+  low:[[-2.2,.32],[2.2,.32],[2.22,.72],[1.4,.92],[.75,.98],[-1.9,1],[-2.2,.95]],cab:[[.75,.97],[.3,1.4],[-1,1.4],[-1.6,1]],roof:1,wing:1}];
+const GEARS=[3.6,2.2,1.5,1.1,.85],FINAL=3.7,WR=.33;
+
+// ================= 2. ASET GAMBAR 3D (dipisah per bagian) =================
+const M=(c,o={})=>new THREE.MeshStandardMaterial(Object.assign({color:c,metalness:.5,roughness:.4},o));
+function profile(pts,w,mat){const s=new THREE.Shape();pts.forEach((p,i)=>i?s.lineTo(p[0],p[1]):s.moveTo(p[0],p[1]));
+ const g=new THREE.ExtrudeGeometry(s,{depth:w,bevelEnabled:true,bevelSize:.05,bevelThickness:.05,bevelSegments:2});g.translate(0,0,-w/2);return new THREE.Mesh(g,mat)}
+const box=(x,y,z,sx,sy,sz,m)=>{const b=new THREE.Mesh(new THREE.BoxGeometry(sx,sy,sz),m);b.position.set(x,y,z);return b};
+// --- Velg + ban (khusus velg) ---
+function makeWheel(d){const piv=new THREE.Group(),sp=new THREE.Group();piv.add(sp);
+ const cyl=(r,w,m)=>{const c=new THREE.Mesh(new THREE.CylinderGeometry(r,r,w,24),m);c.rotation.x=Math.PI/2;return c};
+ sp.add(cyl(WR,.26,M(0x111,{roughness:.9,metalness:0})));sp.add(cyl(.23,.27,M(d.rim,{metalness:.8,roughness:.3})));
+ if(d.spk){sp.add(cyl(.17,.28,M(d.rimDark)));for(let i=0;i<d.spk;i++){const a=new THREE.Group();a.rotation.z=i*6.283/d.spk;a.add(box(.11,0,0,.22,.06,.29,M(d.rim,{metalness:.9})));sp.add(a)}}
+ else sp.add(cyl(.08,.29,M(0x999)));
+ piv.sp=sp;return piv}
+// --- Body mobil (khusus body) ---
+function makeBody(d){const b=new THREE.Group(),bm=M(d.color,{metalness:.7,roughness:.25}),gl=M(0x0b1520,{metalness:.9,roughness:.05});
+ b.add(profile(d.low,d.w,bm));b.add(profile(d.cab,d.w-.2,gl));
+ if(d.roof){const a=d.cab[1],c=d.cab[2];b.add(box((a[0]+c[0])/2,a[1]+.03,0,a[0]-c[0],.07,d.w-.12,bm))}
+ if(d.extra)b.add(profile(d.extra[0],d.w-.1,M(d.extra[1])));
+ if(d.wing){b.add(box(-2.15,1.2,0,.5,.05,1.6,M(0x222)));[-.8,.8].forEach(z=>b.add(box(-2.15,1.08,z,.5,.28,.04,M(0x222))))}
+ [-.55,.55].forEach(z=>{b.add(box(2.24,.62,z,.05,.14,.38,M(0xffffee,{emissive:0xffffaa,emissiveIntensity:.8})));
+  b.add(box(-2.24,.7,z,.04,.12,.4,M(0xd00,{emissive:0xf00,emissiveIntensity:.7})))});
+ b.add(box(2.25,.45,0,.05,.12,.7,M(0x111)));return b}
+// --- Interior kabin (setir) ---
+function makeCabin(d){const s=new THREE.Mesh(new THREE.TorusGeometry(.17,.02,6,16),M(0x111));s.position.set(.45,.98,-.4);s.rotation.y=Math.PI/2;s.rotation.x=.4;return s}
+function buildCar(d){const g=new THREE.Group(),body=makeBody(d);g.add(body);g.body=body;
+ g.steerWheel=makeCabin(d);body.add(g.steerWheel);g.wheels=[];g.front=[];
+ [[1.35,.9],[1.35,-.9],[-1.35,.9],[-1.35,-.9]].forEach(([x,z],i)=>{const w=makeWheel(d);w.position.set(x,WR,z);g.add(w);g.wheels.push(w);if(i<2)g.front.push(w)});return g}
+
+// ================= 3. SCENE, SHOWROOM =================
+const R=new THREE.WebGLRenderer({antialias:true});R.setPixelRatio(Math.min(devicePixelRatio,2));document.body.prepend(R.domElement);
+const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(60,1,.05,3000);
+scene.add(new THREE.HemisphereLight(0xcfe4ff,0x445533,.9));const sun=new THREE.DirectionalLight(0xffffff,.9);sun.position.set(50,100,30);scene.add(sun);
+const cars=CARS.map(buildCar);let ci=0,car=cars[0];cars.forEach(c=>{scene.add(c);c.visible=false});
+const showroom=new THREE.Group();scene.add(showroom);
+showroom.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(6,6,.1,48),M(0x20242c,{metalness:.9,roughness:.2})),{position:V(0,-.05,0)}));
+showroom.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(14,14,9,48,1,true),new THREE.MeshStandardMaterial({color:0x888c94,side:THREE.BackSide})),{position:V(0,4.4,0)}));
+{const f=new THREE.Mesh(new THREE.CircleGeometry(14,48),M(0x15171c,{roughness:.4}));f.rotation.x=-Math.PI/2;f.position.y=-.1;showroom.add(f);
+ const sp=new THREE.SpotLight(0xffffff,1.3,40,.6);sp.position.set(0,9,0);showroom.add(sp);showroom.add(sp.target)}
+
+// ================= 4. DUNIA OPEN MAP (drag strip + Nurburgring + kota, satu kesatuan) =================
+const world=new THREE.Group();scene.add(world);
+function ribbon(pts,w,col,y,closed){const p=[],ix=[],n=pts.length;
+ pts.forEach((a,i)=>{const b=pts[closed?(i+1)%n:Math.min(i+1,n-1)],c=pts[closed?(i-1+n)%n:Math.max(i-1,0)],t=b.clone().sub(c).normalize(),nx=-t.z*w/2,nz=t.x*w/2;
+  p.push(a.x+nx,y,a.z+nz,a.x-nx,y,a.z-nz);if(i<n-1||closed){const j=(i+1)%n;ix.push(i*2,j*2,i*2+1,i*2+1,j*2,j*2+1)}});
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(p,3));g.setIndex(ix);g.computeVertexNormals();
+ const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,side:THREE.DoubleSide,roughness:.9}));world.add(m);return m}
+const seg=(a,b,w,c,y)=>ribbon([a,b],w,c,y||.03);
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+{const gr=new THREE.Mesh(new THREE.PlaneGeometry(5000,5000),M(0x5b8f45,{metalness:0,roughness:1}));gr.rotation.x=-Math.PI/2;world.add(gr);
+ // Drag strip
+ seg(V(0,0,0),V(402,0,0),14,0x333439);[-3.5,3.5].forEach(z=>seg(V(0,0,z),V(402,0,z),.2,0xffffff,.04));
+ seg(V(20,0,0),V(20,0,0.001),14,0xffffff,.04);seg(V(20,0,-7),V(20,0,7),1,0xffffff,.05);seg(V(402,0,-7),V(402,0,7),1.5,0xffffff,.05);
+ [-9,9].forEach(z=>world.add(box(201,.6,z,402,1.2,.4,M(0xbbbbbb))));
+ // Nurburgring (loop)
+ const cp=[];for(let i=0;i<16;i++){const a=i/16*6.283,r=260+80*Math.sin(3*a)+40*Math.cos(2*a);cp.push(V(402+r*Math.cos(a)*1.3,0,-500+r*Math.sin(a)))}
+ window.ring=new THREE.CatmullRomCurve3(cp,true);const rp=ring.getPoints(400);
+ ribbon(rp,18,0xcc2222,.01,true);ribbon(rp,13,0x35363b,.03,true);
+ for(let i=0;i<120;i++){const t=rp[(rnd()*400)|0],o=(rnd()<.5?-1:1)*(25+rnd()*40);const tr=new THREE.Mesh(new THREE.ConeGeometry(3,10,6),M(0x24602c,{metalness:0}));tr.position.set(t.x+o,5,t.z+o*.7);world.add(tr)}
+ seg(V(402,0,0),cp[4],14,0x333439);
+ // Kota
+ seg(V(0,0,0),V(-240,0,0),14,0x333439);
+ for(let i=0;i<7;i++){const c=-180+60*i;seg(V(-600,0,c),V(-240,0,c),14,0x333439);seg(V(-420+c,0,-180),V(-420+c,0,180),14,0x333439)}
+ for(let i=0;i<6;i++)for(let j=0;j<6;j++){const h=8+rnd()*50;world.add(box(-420+(-180+60*i)+30,h/2,-180+60*j+30,38,h,38,M(0x8a8f99+((rnd()*0x303030)|0),{metalness:.1,roughness:.8})))}}
+const spawn=[[V(10,0,0),0],[ring.getPoint(0),Math.atan2(-ring.getTangent(0).z,ring.getTangent(0).x)],[V(-400,0,0),0]];
+
+// ================= 5. FISIKA & STATE =================
+const S={mode:'menu',x:0,z:0,h:0,v:0,g:0,rpm:900,steer:0,pitch:0,roll:0,cam:0,az:.6,el:.35,dist:9};
+const cfg=Object.assign({plat:/Mobi|Android|iPhone/.test(navigator.userAgent)?'m':'d',cm:'steer',tr:'a',sens:1},ld('cfg')),lay=ld('lay')||{};
+function ld(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}}function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+const inp={gas:0,brk:0,L:0,R:0,steer:0,gyro:0},keys={};
+function physics(dt){const d=CARS[ci];let steerIn=0,gas=inp.gas,brk=inp.brk;
+ if(cfg.plat=='d'){gas=keys.ArrowUp||keys.w?1:0;brk=keys.ArrowDown||keys.s?1:0;steerIn=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0)}
+ else steerIn=cfg.cm=='steer'?inp.steer:cfg.cm=='gyro'?inp.gyro:inp.R-inp.L;
+ steerIn=Math.max(-1,Math.min(1,steerIn*cfg.sens));
+ const ratio=GEARS[S.g]*FINAL;S.rpm=Math.max(900,Math.abs(S.v)/WR*ratio*9.55);
+ if(cfg.tr=='a'||cfg.plat=='d'){if(S.rpm>6300&&S.g<4)S.g++;else if(S.rpm<2600&&S.g>0&&S.v>0)S.g--}
+ let a=0;if(gas&&S.rpm<7000){const k=Math.max(.25,1-Math.pow((S.rpm-5000)/5000,2));a=d.pw*gas*k*GEARS[S.g]/3.6}
+ a-=.0004*S.v*Math.abs(S.v)+.12*Math.sign(S.v);
+ if(brk){if(S.v>.5)a-=11;else a-=6*(S.v>-8)}
+ S.v+=a*dt;if(!gas&&!brk&&Math.abs(S.v)<.2)S.v=0;
+ S.steer+=(steerIn-S.steer)*Math.min(1,dt*8);const ang=S.steer*.55/(1+Math.abs(S.v)*.04),yaw=S.v/2.7*Math.tan(ang);
+ S.h-=yaw*dt;S.x+=Math.cos(S.h)*S.v*dt;S.z-=Math.sin(S.h)*S.v*dt;S.ang=ang;
+ S.pitch+=(a*.004-S.pitch)*dt*5;S.roll+=(-yaw*S.v*.004-S.roll)*dt*5}
+
+// ================= 6. ANIMASI MOBIL (roda, setir, body) =================
+function animate(dt){car.position.set(S.x,0,S.z);car.rotation.y=S.h;car.body.rotation.set(S.roll,0,S.pitch);
+ car.wheels.forEach(w=>w.sp.rotation.z-=S.v*dt/WR);car.front.forEach(w=>w.rotation.y=-S.ang||0);car.steerWheel.rotation.x=.4+(S.steer||0)*1.5}
+
+// ================= 7. KAMERA (kabin / belakang / bebas) =================
+const CAMN=['Kabin','Belakang','Bebas'];
+function updCam(dt){car.updateMatrixWorld(true);
+ if(S.mode=='menu'){const t=performance.now()/4000;car.rotation.y=t;cam.position.set(7,2.2,6);cam.lookAt(0,.8,0);return}
+ if(S.cam==0){cam.position.copy(car.localToWorld(V(.1,1.2,-.4)));cam.lookAt(car.localToWorld(V(10,1.1,-.4)))}
+ else if(S.cam==1){const f=V(Math.cos(S.h),0,-Math.sin(S.h)),p=V(S.x,0,S.z).addScaledVector(f,-7.5);p.y=2.6;cam.position.lerp(p,Math.min(1,dt*6));cam.lookAt(V(S.x,1,S.z).addScaledVector(f,5))}
+ else{const c=V(S.x,.9,S.z);cam.position.set(c.x+S.dist*Math.cos(S.el)*Math.cos(S.az),c.y+S.dist*Math.sin(S.el),c.z+S.dist*Math.cos(S.el)*Math.sin(S.az));cam.lookAt(c)}}
+// kamera bebas: drag = putar, scroll/pinch = zoom
+const ptr=new Map();let pd=0;
+R.domElement.addEventListener('pointerdown',e=>ptr.set(e.pointerId,e));
+R.domElement.addEventListener('pointerup',e=>ptr.delete(e.pointerId));
+R.domElement.addEventListener('pointermove',e=>{if(S.mode!='play'||S.cam!=2||!ptr.has(e.pointerId))return;const o=ptr.get(e.pointerId);
+ if(ptr.size==1){S.az+=(e.clientX-o.clientX)*.008;S.el=Math.max(.02,Math.min(1.5,S.el+(e.clientY-o.clientY)*.008))}
+ else{ptr.set(e.pointerId,e);const [a,b]=[...ptr.values()],d=Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY);if(pd)S.dist=Math.max(3,Math.min(40,S.dist-(d-pd)*.05));pd=d}ptr.set(e.pointerId,e)});
+R.domElement.addEventListener('wheel',e=>{S.dist=Math.max(3,Math.min(40,S.dist+e.deltaY*.02))});
+
+// ================= 8. KONTROL (mobile: setir/gyro/panah + transmisi; desktop: WASD/panah) =================
+onkeydown=e=>keys[e.key]=1;onkeyup=e=>keys[e.key]=0;
+let editing=false;
+function hold(id,k,fn){const el=$(id);el.addEventListener('pointerdown',e=>{if(editing)return;inp[k]=1;el.setPointerCapture(e.pointerId);if(fn)fn()});['pointerup','pointercancel'].forEach(t=>el.addEventListener(t,()=>{inp[k]=0}))}
+hold('gas','gas');hold('brk','brk');hold('bL','L');hold('bR','R');
+hold('sUp','_u',()=>{if(S.g<4)S.g++});hold('sDn','_d',()=>{if(S.g>0)S.g--});
+{const w=$('wheel');let on=0;const f=e=>{const r=w.getBoundingClientRect(),a=Math.atan2(e.clientX-r.left-r.width/2,-(e.clientY-r.top-r.height/2));inp.steer=Math.max(-1,Math.min(1,a/1.2));w.style.transform=`rotate(${inp.steer*69}deg)`};
+ w.addEventListener('pointerdown',e=>{if(!editing){on=1;w.setPointerCapture(e.pointerId);f(e)}});w.addEventListener('pointermove',e=>on&&f(e));
+ ['pointerup','pointercancel'].forEach(t=>w.addEventListener(t,()=>{on=0;inp.steer=0;w.style.transform=''}))}
+addEventListener('deviceorientation',e=>{if(cfg.cm!='gyro')return;const a=(screen.orientation&&screen.orientation.angle)||window.orientation||0;
+ const t=a==90?e.beta:(a==270||a==-90)?-e.beta:e.gamma;inp.gyro=Math.max(-1,Math.min(1,(t||0)/30))});
+function ctlVis(){const m=cfg.plat=='m'&&S.mode=='play';
+ $('wheel').classList.toggle('hide',!(m&&cfg.cm=='steer'));$('bL').classList.toggle('hide',!(m&&cfg.cm=='arrow'));$('bR').classList.toggle('hide',!(m&&cfg.cm=='arrow'));
+ ['gas','brk'].forEach(i=>$(i).classList.toggle('hide',!m));['sUp','sDn'].forEach(i=>$(i).classList.toggle('hide',!(m&&cfg.tr=='m')))}
+// --- Atur posisi tombol (letak gas, rem, setir, transmisi, dll) ---
+function place(){document.querySelectorAll('.ctl').forEach(el=>{const l=lay[el.dataset.id];if(l){el.style.left=l[0]*innerWidth+'px';el.style.top=l[1]*innerHeight+'px';el.style.right=el.style.bottom='auto'}})}
+document.querySelectorAll('.ctl').forEach(el=>{let o=null;
+ el.addEventListener('pointerdown',e=>{if(editing){o=[e.clientX-el.offsetLeft,e.clientY-el.offsetTop];el.setPointerCapture(e.pointerId)}});
+ el.addEventListener('pointermove',e=>{if(editing&&o){el.style.left=e.clientX-o[0]+'px';el.style.top=e.clientY-o[1]+'px';el.style.right=el.style.bottom='auto'}});
+ el.addEventListener('pointerup',()=>{if(editing&&o){o=null;lay[el.dataset.id]=[el.offsetLeft/innerWidth,el.offsetTop/innerHeight];sv('lay',lay)}})});
+$('edit').onclick=()=>{editing=!editing;$('set').classList.add('hide');ctlVis();['wheel','bL','bR','gas','brk','sUp','sDn'].forEach(i=>{$(i).classList.remove('hide');$(i).classList.toggle('edit',editing)});
+ if(editing){$('bSet').textContent='✔ Selesai';$('bSet').onclick=()=>{editing=false;document.querySelectorAll('.ctl').forEach(e=>e.classList.remove('edit'));$('bSet').textContent='⚙ Pengaturan';$('bSet').onclick=openSet;ctlVis()}}};
+$('reset').onclick=()=>{for(const k in lay)delete lay[k];sv('lay',lay);location.reload()};
+
+// ================= 9. MENU & PENGATURAN =================
+function openSet(){$('plat').value=cfg.plat;$('cm').value=cfg.cm;$('tr').value=cfg.tr;$('sens').value=cfg.sens;$('set').classList.remove('hide')}
+$('bSet').onclick=openSet;
+$('close').onclick=()=>{cfg.plat=$('plat').value;cfg.cm=$('cm').value;cfg.tr=$('tr').value;cfg.sens=+$('sens').value;sv('cfg',cfg);
+ if(cfg.cm=='gyro'&&window.DeviceOrientationEvent&&DeviceOrientationEvent.requestPermission)DeviceOrientationEvent.requestPermission();
+ $('set').classList.add('hide');ctlVis()};
+document.querySelectorAll('[data-tp]').forEach(b=>b.onclick=()=>{const s=spawn[+b.dataset.tp];S.x=s[0].x;S.z=s[0].z;S.h=s[1];S.v=0;S.g=0;$('set').classList.add('hide')});
+$('bCam').onclick=()=>{S.cam=(S.cam+1)%3;$('bCam').textContent='📷 '+CAMN[S.cam]};
+function pick(i){ci=(i+3)%3;cars.forEach((c,k)=>c.visible=k==ci);car=cars[ci];car.position.set(0,0,0);car.rotation.set(0,0,0);$('cname').textContent=CARS[ci].n;$('cstat').textContent=CARS[ci].info+' • Power '+CARS[ci].pw}
+$('prev').onclick=()=>pick(ci-1);$('next').onclick=()=>pick(ci+1);
+$('start').onclick=()=>{S.mode='play';$('menu').classList.add('hide');['hud','bCam','bSet','bHome'].forEach(i=>$(i).classList.remove('hide'));showroom.visible=false;world.visible=true;scene.fog=new THREE.Fog(0xa9d4f5,300,1800);scene.background=new THREE.Color(0xa9d4f5);
+ const s=spawn[0];S.x=s[0].x;S.z=s[0].z;S.h=0;S.v=0;S.g=0;ctlVis()};
+world.visible=false;scene.background=new THREE.Color(0x15171c);pick(0);
+
+// ================= 9b. WEBSITE (halaman beranda + routing #game) =================
+function go(id){const e=$(id);e&&e.scrollIntoView({behavior:'smooth'})}
+function route(){const g=location.hash=='#game';$('site').classList.toggle('hide',g);document.body.classList.toggle('ingame',g);if(!g&&S.mode=='play')toHome()}
+function toHome(){S.mode='menu';S.v=0;['hud','bCam','bSet','bHome'].forEach(i=>$(i).classList.add('hide'));$('menu').classList.remove('hide');showroom.visible=true;world.visible=false;scene.fog=null;scene.background=new THREE.Color(0x15171c);ctlVis()}
+addEventListener('hashchange',route);$('bHome').onclick=()=>{toHome();location.hash=''};
+document.querySelectorAll('[data-play]').forEach(b=>b.onclick=()=>{location.hash='game'});
+route();
+
+// ================= 10. LOOP =================
+function resize(){R.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix();place()}
+addEventListener('resize',resize);resize();let last=performance.now();
+(function loop(t){requestAnimationFrame(loop);const dt=Math.min(.05,(t-last)/1e3);last=t;
+ if(S.mode=='play'){physics(dt);animate(dt);const k=Math.abs(S.v)*3.6|0;$('spd').textContent=k+' km/h';$('gear').textContent=S.v<-.5?'R':S.v<.3&&!inp.gas?'N':'G'+(S.g+1);$('bar').firstChild.style.width=Math.min(100,S.rpm/70)+'%'}
+ updCam(dt);R.render(scene,cam)})(0);
+</script></body></html>
